@@ -1,13 +1,13 @@
 #!/bin/bash
 
 function success {
-  echo -e " $(tput bold)$(tput setaf 2)[✓]$(tput sgr0)"
+  echo -e "$(tput bold)$(tput setaf 2)[✓]$(tput sgr0)"
 }
 function warn {
   echo -e "$(tput sgr 0 1)$(tput setaf 3)$1$(tput sgr0)"
 }
 function error {
-  echo -e " $(tput bold)$(tput setaf 1)[✗]$(tput sgr0)"
+  echo -e "$(tput bold)$(tput setaf 1)[✗]$(tput sgr0)"
 }
 
 # Welcome
@@ -25,19 +25,41 @@ echo "Configure OS X? (Y/N)"
 read -r response
 if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
 
+  # System
+  echo -ne "Configuring System... "
+    {
+      launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist
+      killall NotificationCenter
+    } &> /dev/null
+    defaults write NSGlobalDomain KeyRepeat -int 0
+    defaults write com.apple.screensaver askForPassword -int 1
+    defaults write com.apple.screensaver askForPasswordDelay -int 0
+    defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+    defaults write com.apple.driver.AppleBluetoothMultitouch.mouse MouseButtonMode -string "TwoButton"
+    defaults write NSGlobalDomain com.apple.sound.beep.feedback -integer 0
+    defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
+    defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+    killall SystemUIServer
+  success
+
   # Finder
-  echo -ne "Finder: Showing hidden files..."
+  echo -ne "Configuring Finder... "
+    defaults write NSGlobalDomain AppleShowAllExtensions -bool true
     defaults write com.apple.Finder AppleShowAllFiles -bool true
-  success
-  echo -ne "Finder: Hiding desktop icons..."
     defaults write com.apple.finder CreateDesktop -bool false
-  success
-  echo -ne "Finder: Restarting..."
     killall Finder
   success
 
-  #Safari
-  echo -ne "Safari: Enable dev tools..."
+  # Dock
+  echo -ne "Configuring Dock... "
+    defaults write com.apple.dock tilesize -int 60
+    defaults write com.apple.dock orientation -string "right"
+    defaults write com.apple.dock autohide -bool true
+    killall Dock
+  success
+
+  # Safari
+  echo -ne "Configuring Safari... "
     defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
     defaults write com.apple.Safari IncludeDevelopMenu -bool true
     defaults write com.apple.Safari WebKitDeveloperExtrasEnabledPreferenceKey -bool true
@@ -57,7 +79,7 @@ if [[ $? != 0 ]] ; then
   echo "Install Apple command line tools? (Y/N)"
   read -r response
   if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
-    echo -ne "Installing Apple command line tools..."
+    echo -ne "Installing Apple command line tools... "
       {
         xcode-select --install
       } &> /dev/null
@@ -77,28 +99,29 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
 
   which -s brew
   if [[ $? != 0 ]] ; then
-    echo -ne "Installing Homebrew..."
+    echo -ne "Installing Homebrew... "
       {
         ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
       } &> /dev/null
     success
   else
     warn "Homebrew already installed!"
-    echo -ne "Updating Homebrew recipes..."
+    echo -ne "Updating Homebrew recipes... "
       {
         brew update
       } &> /dev/null
     success
   fi
 
-  echo -ne "Tapping..."
+  echo -ne "Tapping... "
     {
+      brew tap caskroom/versions
       brew tap caskroom/fonts
       brew tap igas/fry
     } &> /dev/null
   success
 
-  echo -ne "Installing recipes..."
+  echo -ne "Installing recipes... "
     {
       brew install the_silver_searcher
       brew install git
@@ -111,7 +134,7 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
     } &> /dev/null
   success
 
-  echo -ne "Installing fonts..."
+  echo -ne "Installing fonts... "
     {
       brew cask install font-office-code-pro
       brew cask install font-inconsolata
@@ -120,7 +143,7 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
     } &> /dev/null
   success
 
-  echo -ne "Installing apps..."
+  echo -ne "Installing apps... "
     {
       brew cask install atom
       brew cask install spotify
@@ -128,15 +151,16 @@ if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
       brew cask install sketch
       brew cask install cleanmymac
       brew cask install 1password
-      brew cask install iterm2
+      brew cask install iterm2-beta
       brew cask install google-chrome
       brew cask install bartender
       brew cask install slack
       brew cask install rightfont
+      brew cask install soundnode
     } &> /dev/null
   success
 
-  echo -ne "Cleaning up..."
+  echo -ne "Cleaning up... "
     {
       brew cleanup
       brew cask cleanup
@@ -172,13 +196,24 @@ read -r response
 if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
 
   # OSX
-  echo -ne "Stowing /osx..."
+  echo -ne "Linking /osx... "
     stow osx
   success
 
   # Fish
-  echo -ne "Stowing /fish..."
+  echo -ne "Linking /fish... "
     stow fish
   success
   echo
+fi
+
+# iTerm
+# -----------------------------------------------
+
+echo "Configure iTerm2? (Y/N)"
+read -r response
+if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
+  echo -ne "Linking preferences... "
+    defaults write com.googlecode.iterm2.plist -string "~/.dotfiles/iterm"
+  success
 fi
