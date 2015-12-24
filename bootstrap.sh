@@ -170,6 +170,28 @@ fi
 
 echo
 
+echo
+echo "Install games and game utilities? (Y/N)"
+read -r response
+if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]] ; then
+
+  echo -ne "Installing apps... "
+    {
+      brew cask install league-of-legends
+      brew cask install razer-synapse
+    } &> /dev/null
+  success
+
+  echo -ne "Cleaning up... "
+    {
+      brew cleanup
+      brew cask cleanup
+    } &> /dev/null
+  success
+fi
+
+echo
+
 # SSH Keys
 # -----------------------------------------------
 
