@@ -1,16 +1,30 @@
-function fish_prompt
-  set -l yellow (set_color yellow)
-  set -l green (set_color green)
-  set -l normal (set_color normal)
+function prompt_segment -a "content" "color" -d "Print a segment of your prompt"
+  if test -n $color
+    set_color $color
+  else
+    set_color normal
+  end
 
-  echo -n -s (prompt_pwd) " "
+  echo -ns $content" "
 
+  set_color normal
+end
+
+function current_directory -d "Print your current directory"
+  prompt_segment (prompt_pwd) white
+end
+
+function current_git_branch -d "Print your current git branch"
   if git_is_repo
     if git_is_touched
-      echo -n -s $yellow
+      prompt_segment (git_branch_name) yellow
     else
-      echo -n -s $green
+      prompt_segment (git_branch_name) green
     end
-    echo -n -s (git_branch_name) $normal " "
   end
+end
+
+function fish_prompt -d "Render your left prompt"
+  current_directory
+  current_git_branch
 end
